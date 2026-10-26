@@ -141,6 +141,11 @@ function parseValid<A, S = Strict<A>>(
     : strict;
 }
 
+/** Every error to display for one error, which may carry the full list. */
+export function errorList(error?: CompilationError): CompilationError[] {
+  return error ? (error.errors ?? [error]) : [];
+}
+
 let parserRecovery = false;
 
 /** Feature flag, default false (today's behavior). */
