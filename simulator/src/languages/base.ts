@@ -4,6 +4,8 @@ import {
   type Grammar,
   grammar,
   Interval,
+  type MatchResult,
+  type Node,
   type Semantics,
 } from "ohm-js";
 import { int2, int10, int16 } from "../util/twos.js";
@@ -139,6 +141,17 @@ function parseValid<A, S = Strict<A>>(
     : strict;
 }
 
+let parserRecovery = false;
+
+/** Feature flag, default false (today's behavior). */
+export function setParserRecovery(enabled: boolean): void {
+  parserRecovery = enabled;
+}
+
+export function isParserRecoveryEnabled(): boolean {
+  return parserRecovery;
+}
+
 const UNKNOWN_HDL_ERROR = `HDL statement has a syntax error`;
 
 export function createError(
@@ -155,26 +168,98 @@ export function createError(
   };
 }
 
+/** Recovery options that Ohm builds with Fallible accept; others ignore them. */
+interface RecoveringGrammar {
+  match(
+    input: string,
+    startRule?: string,
+    options?: { recover: boolean },
+  ): MatchResult;
+}
+
+function spanAt(source: string, position: number): Span {
+  let line = 1;
+  for (let i = 0; i < position && i < source.length; i++) {
+    if (source[i] === "\n") line++;
+  }
+  return { start: position, end: position, line };
+}
+
+/** True for the `_fail` node a recovery point leaves in its synchronizer slot. */
+export function isFail(node: Node): boolean {
+  return node.ctorName === "_fail";
+}
+
+/**
+ * The error node for a recovery point's skip region. Reports the same message
+ * and position as the matching entry in `Parsed.errors`.
+ */
+export function parseErrorOf(fail: Node): ParseError {
+  const skipped = fail.source;
+  const failure = fail.recoveredFailure;
+  const position = failure?.position ?? skipped.startIdx;
+  const where = spanAt(skipped.sourceString, position);
+  return {
+    kind: "ParseError",
+    error: createError(failure?.shortMessage ?? UNKNOWN_HDL_ERROR, where),
+    span: span(skipped),
+  };
+}
+
+function recoveredErrors(
+  source: string,
+  match: MatchResult,
+): CompilationError[] {
+  const failures =
+    (
+      match as unknown as {
+        getRecoveredFailures?(): { shortMessage: string; position: number }[];
+      }
+    ).getRecoveredFailures?.() ?? [];
+  return failures.map((failure) =>
+    createError(failure.shortMessage, spanAt(source, failure.position)),
+  );
+}
+
 function makeParser<ResultType>(
   grammar: Grammar,
   semantics: Semantics,
   property: (obj: Dict) => ResultType = ({ root }) => root,
 ): (source: string) => ParseResult<ResultType> {
   return function parse(source) {
+    // Share diagnostics across try and catch so semantic conversion failures
+    // retain the recovered syntax errors.
+    let errors: CompilationError[] = [];
     try {
-      const match = grammar.match(source);
+      const recover = parserRecovery;
+      const match = recover
+        ? (grammar as unknown as RecoveringGrammar).match(source, undefined, {
+            recover,
+          })
+        : grammar.match(source);
+      errors = recover ? recoveredErrors(source, match) : [];
       if (match.failed()) {
         const first = createError(
           match.shortMessage ?? UNKNOWN_HDL_ERROR,
           span(match.getInterval()),
         );
-        return Err(first);
+        // Today's first error leads the list; the final failure ends it.
+        return Err(
+          errors.length > 0
+            ? { ...first, errors: [first, ...errors.slice(1)] }
+            : first,
+        );
       }
       const parsed = semantics(match);
       const ast = property(parsed);
-      return Ok({ ast, errors: [] });
+      return Ok({ ast, errors });
     } catch (e) {
-      return Err(e as Error);
+      const error = e as Error;
+      return Err(
+        errors.length > 0
+          ? { ...errors[0], errors: [...errors, error] }
+          : error,
+      );
     }
   };
 }

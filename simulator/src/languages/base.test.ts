@@ -1,15 +1,18 @@
 import { Err, Ok } from "@davidsouther/jiffies/result.ts";
 import { grammar } from "ohm-js";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { cleanState } from "../clean_state.js";
 import {
   baseSemantics,
   type CompilationError,
   grammars,
   isParseError,
+  isParserRecoveryEnabled,
   makeParsers,
+  type Parsed,
   type ParseError,
   requireValid,
+  setParserRecovery,
 } from "./base.js";
 
 describe("Ohm Base", () => {
@@ -63,6 +66,7 @@ describe("Ohm Base", () => {
   });
 
   describe("partial parse result", () => {
+    beforeEach(() => setParserRecovery(false));
     const listGrammar = grammar(`Nums <: Base { Root := Number+ }`, grammars);
     const numsSemantics = listGrammar.extendSemantics(baseSemantics);
     numsSemantics.addAttribute<number[]>("root", {
@@ -127,5 +131,64 @@ describe("Ohm Base", () => {
       expect(isParseError(undefined)).toBe(false);
       expect(isParseError("ParseError")).toBe(false);
     });
+  });
+});
+
+describe("parser recovery opt-in", () => {
+  it("starts disabled and can be reset after opting in", () => {
+    expect(isParserRecoveryEnabled()).toBe(false);
+    setParserRecovery(true);
+    expect(isParserRecoveryEnabled()).toBe(true);
+    setParserRecovery(false);
+    expect(isParserRecoveryEnabled()).toBe(false);
+  });
+});
+
+describe("recovering parser factory", () => {
+  const recoveringGrammar = grammar(
+    `Words { Root = (word ! ";")+ word = letter+ }`,
+  );
+  const semantics = recoveringGrammar.createSemantics();
+  const parsers = makeParsers(
+    recoveringGrammar,
+    semantics,
+    () => "partial AST",
+  );
+
+  beforeEach(() => setParserRecovery(false));
+  afterEach(() => setParserRecovery(false));
+
+  it("keeps recovery disabled until opted in", () => {
+    expect(parsers.parse("1;2;")).toBeErr();
+    setParserRecovery(true);
+    const result = parsers.parse("1;2;");
+    expect(result).toBeOk();
+    expect(Ok(result as Ok<Parsed<string>>).errors).toHaveLength(2);
+  });
+
+  it("parseStrict rejects a recovered AST and retains every diagnostic", () => {
+    setParserRecovery(true);
+    const recovered = parsers.parse("1;2;");
+    expect(recovered).toBeOk();
+    const result = parsers.parseStrict("1;2;");
+    expect(result).toBeErr();
+    expect(Err(result as Err<CompilationError>)).toEqual({
+      ...Ok(recovered as Ok<Parsed<string>>).errors[0],
+      errors: Ok(recovered as Ok<Parsed<string>>).errors,
+    });
+  });
+
+  it("keeps syntax diagnostics ahead of an AST conversion error", () => {
+    const conversionError = new Error("AST conversion failed");
+    const failing = makeParsers(recoveringGrammar, semantics, () => {
+      throw conversionError;
+    });
+    setParserRecovery(true);
+    const result = failing.parse("1;2;");
+    expect(result).toBeErr();
+    const error = Err(result as Err<CompilationError>);
+    expect(error.errors).toHaveLength(3);
+    expect(error.message).toBe(error.errors?.[0].message);
+    expect(error.errors?.[2]).toBe(conversionError);
   });
 });
