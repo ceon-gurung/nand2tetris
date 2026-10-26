@@ -130,7 +130,7 @@ export function makeVmStore(
   storage: Record<string, string>,
   dispatch: MutableRefObject<VmStoreDispatch>,
 ) {
-  const parsed = unwrap(VM.parse(FIBONACCI));
+  const parsed = unwrap(VM.parseStrict(FIBONACCI));
   let vm = unwrap(Vm.build(parsed.instructions));
   let test = new VMTest({ doEcho: setStatus }).with(vm);
   let useTest = false;
@@ -280,7 +280,7 @@ export function makeVmStore(
       }
       vmSource = content;
 
-      const parseResult = VM.parse(content);
+      const parseResult = VM.parseStrict(content);
 
       if (isErr(parseResult)) {
         dispatch.current({ action: "setError", payload: Err(parseResult) });
@@ -309,7 +309,7 @@ export function makeVmStore(
 
       let lineOffset = 0;
       for (const file of files) {
-        const parseResult = VM.parse(file.content);
+        const parseResult = VM.parseStrict(file.content);
 
         if (isErr(parseResult)) {
           dispatch.current({ action: "setError", payload: Err(parseResult) });
@@ -348,7 +348,7 @@ export function makeVmStore(
 
     loadTest(path: string, source: string) {
       dispatch.current({ action: "setTst", payload: { tst: source } });
-      const tst = TST.parse(source);
+      const tst = TST.parseStrict(source);
 
       if (isErr(tst)) {
         dispatch.current({ action: "setValid", payload: false });

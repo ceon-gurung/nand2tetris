@@ -1,7 +1,7 @@
 /** Reads tst files to apply and perform test runs. */
 
 import { grammar as ohmGrammar } from "ohm-js";
-import { baseSemantics, grammars, makeParser, Span, span } from "./base.js";
+import { baseSemantics, grammars, makeParsers, Span, span } from "./base.js";
 
 export interface TstEchoOperation {
   op: "echo";
@@ -268,5 +268,5 @@ export const TST = {
   grammar: tstGrammar,
   semantics: tstSemantics,
   parser: grammar,
-  parse: makeParser<Tst>(grammar, tstSemantics),
+  ...makeParsers<Tst>(grammar, tstSemantics),
 };

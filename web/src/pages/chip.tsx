@@ -77,7 +77,7 @@ export const Chip = () => {
         }
 
         const content = await file.content;
-        const parsed = HDL.parse(content);
+        const parsed = HDL.parseStrict(content);
         if (isErr(parsed)) {
           continue;
         }

@@ -38,9 +38,9 @@ describe("All Projects", () => {
       const partsIdx = hdlFile.indexOf("PARTS:");
       expect(partsIdx).toBeGreaterThan(0);
       hdlFile = hdlFile.substring(0, partsIdx) + "BUILTIN; }";
-      const hdl = HDL.parse(hdlFile);
+      const hdl = HDL.parseStrict(hdlFile);
       expect(hdl).toBeOk();
-      const tst = TST.parse(tstFile);
+      const tst = TST.parseStrict(tstFile);
       expect(tst).toBeOk();
 
       const chip = await build({ parts: Ok(hdl as Ok<HdlParse>) });
@@ -61,9 +61,9 @@ describe("All Projects", () => {
 
       const outFile = test.log();
 
-      const cmp = CMP.parse(cmpFile);
+      const cmp = CMP.parseStrict(cmpFile);
       expect(cmp).toBeOk();
-      const out = CMP.parse(outFile);
+      const out = CMP.parseStrict(outFile);
       expect(out).toBeOk();
 
       const diffs = compare(Ok(cmp as Ok<Cmp>), Ok(out as Ok<Cmp>));

@@ -128,7 +128,7 @@ describe("Chip Builder", () => {
     let foo: Chip;
 
     try {
-      const chip = unwrap(await HDL.parse(USE_COPY_HDL));
+      const chip = unwrap(HDL.parseStrict(USE_COPY_HDL));
       foo = unwrap(await build({ parts: chip, dir: ".", fs }));
     } catch (e) {
       throw new Error(asDisplay(e));
@@ -146,7 +146,7 @@ describe("Chip Builder", () => {
   it("returns error for mismatching input width", async () => {
     try {
       const chip = unwrap(
-        HDL.parse(`CHIP Foo {
+        HDL.parseStrict(`CHIP Foo {
         IN in[3]; OUT out;
         PARTS: Or8Way(in=in, out=out);
       }`),
@@ -161,7 +161,7 @@ describe("Chip Builder", () => {
   it("returns error for mismatching output width", async () => {
     try {
       const chip = unwrap(
-        HDL.parse(`CHIP Foo {
+        HDL.parseStrict(`CHIP Foo {
         IN in; OUT out[5];
         PARTS: Not(in=in, out=out);
       }`),
@@ -176,7 +176,7 @@ describe("Chip Builder", () => {
   it("returns error for wire loop", async () => {
     try {
       const chip = unwrap(
-        HDL.parse(`CHIP Not {
+        HDL.parseStrict(`CHIP Not {
         IN in;
         OUT out;
         PARTS:
@@ -193,7 +193,7 @@ describe("Chip Builder", () => {
   it("returns error for part loop", async () => {
     try {
       const chip = unwrap(
-        HDL.parse(`CHIP Not {
+        HDL.parseStrict(`CHIP Not {
         IN in;
         OUT out;
         PARTS:
@@ -211,7 +211,7 @@ describe("Chip Builder", () => {
   it("sorts after wiring", async () => {
     try {
       const chip = unwrap(
-        HDL.parse(`CHIP Or { IN a, b; OUT out;
+        HDL.parseStrict(`CHIP Or { IN a, b; OUT out;
   PARTS:
   Not(in =b , out = net2);
   Nand(a = net, b =net2 , out =out );

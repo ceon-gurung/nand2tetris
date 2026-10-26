@@ -15,8 +15,8 @@ export const DiffTable = ({
   className?: string;
   zeroState?: ReactElement;
 }) => {
-  const output = CMP.parse(out);
-  const compare = CMP.parse(cmp);
+  const output = CMP.parseStrict(out);
+  const compare = CMP.parseStrict(cmp);
 
   if (isErr(output)) {
     return (

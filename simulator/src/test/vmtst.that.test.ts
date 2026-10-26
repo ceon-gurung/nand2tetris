@@ -24,11 +24,13 @@ async function runVme(project: string, name: string) {
     const src = await fs.readFile(`${dir}/${f}`);
     parsed.push({
       name: f.replace(".vm", ""),
-      instructions: unwrap(VM.parse(src)).instructions,
+      instructions: unwrap(VM.parseStrict(src)).instructions,
     });
   }
   const vm = unwrap(Vm.buildFromFiles(parsed));
-  const tst = unwrap(TST.parse(await fs.readFile(`${dir}/${name}VME.tst`)));
+  const tst = unwrap(
+    TST.parseStrict(await fs.readFile(`${dir}/${name}VME.tst`)),
+  );
   const test = unwrap(VMTest.from(tst)).using(fs).with(vm);
   await test.run();
   const cmp = await fs.readFile(`${dir}/${name}.cmp`);
@@ -55,7 +57,7 @@ describe("#659", () => {
 describe("#658 THAT segment", () => {
   test("pop that 2 / pop that 5 are visible in the THAT segment", () => {
     const { instructions } = unwrap(
-      VM.parse(`
+      VM.parseStrict(`
 push constant 4000
 pop pointer 1
 push constant 11

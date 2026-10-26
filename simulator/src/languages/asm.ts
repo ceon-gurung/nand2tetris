@@ -21,7 +21,7 @@ import {
   CompilationError,
   createError,
   grammars,
-  makeParser,
+  makeParsers,
   Span,
   span,
 } from "./base.js";
@@ -361,7 +361,7 @@ export const ASM = {
   grammar: asmGrammar,
   semantics: asmSemantics,
   parser: grammar,
-  parse: makeParser<Asm>(grammar, asmSemantics),
+  ...makeParsers<Asm>(grammar, asmSemantics),
   passes: {
     fillLabel,
     emit,

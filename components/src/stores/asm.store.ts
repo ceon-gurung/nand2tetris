@@ -333,7 +333,7 @@ export function makeAsmStore(
 
     compileAsm(asm: string) {
       this.reset();
-      const parseResult = ASM.parse(asm);
+      const parseResult = ASM.parseStrict(asm);
       if (isErr(parseResult)) {
         dispatch.current({
           action: "setError",

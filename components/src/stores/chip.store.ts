@@ -439,7 +439,7 @@ export function makeChipStore(
     compileTest(file: string, path: string) {
       if (!fs) return;
       dispatch.current({ action: "setFiles", payload: { tst: file } });
-      const tst = TST.parse(file);
+      const tst = TST.parseStrict(file);
       if (isErr(tst)) {
         setStatus({
           message: `Failed to parse test ${Err(tst).message}`,

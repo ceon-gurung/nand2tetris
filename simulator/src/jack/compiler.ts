@@ -60,7 +60,7 @@ export function compile(
 ): Record<string, string | CompilationError> {
   const classes: Record<string, Class | CompilationError> = {};
   for (const [name, content] of Object.entries(files)) {
-    const parsed = JACK.parse(content);
+    const parsed = JACK.parseStrict(content);
     if (isErr(parsed)) {
       classes[name] = Err(parsed);
     } else {

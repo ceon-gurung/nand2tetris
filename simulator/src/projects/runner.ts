@@ -46,8 +46,8 @@ export const hasTest = ({
 
 /** Try parsing the loaded files. */
 export const maybeParse = (file: AssignmentFiles): AssignmentParse => {
-  const maybeParsedHDL = HDL.parse(file.hdl);
-  const maybeParsedTST = TST.parse(file.tst);
+  const maybeParsedHDL = HDL.parseStrict(file.hdl);
+  const maybeParsedTST = TST.parseStrict(file.tst);
   return { ...file, maybeParsedHDL, maybeParsedTST };
 };
 

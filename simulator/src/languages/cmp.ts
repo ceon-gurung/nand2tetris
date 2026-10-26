@@ -1,5 +1,5 @@
 import { grammar as ohmGrammar } from "ohm-js";
-import { baseSemantics, grammars, makeParser } from "./base.js";
+import { baseSemantics, grammars, makeParsers } from "./base.js";
 
 export type Cell = string;
 export type Line = Cell[];
@@ -31,5 +31,5 @@ export const CMP = {
   grammar: cmpGrammar,
   semantics: cmpSemantics,
   parser: grammar,
-  parse: makeParser<Cmp>(grammar, cmpSemantics),
+  ...makeParsers<Cmp>(grammar, cmpSemantics),
 };

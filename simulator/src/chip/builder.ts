@@ -27,7 +27,7 @@ export async function parse(
   name?: string,
   fs?: FileSystem,
 ): Promise<Result<Chip, CompilationError>> {
-  const parsed = HDL.parse(code.toString());
+  const parsed = HDL.parseStrict(code.toString());
   if (isErr(parsed)) {
     return parsed;
   }
@@ -44,7 +44,7 @@ export async function loadChip(
   }
   try {
     const file = await fs.readFile(`${dir}/${name}.hdl`);
-    const maybeParsedHDL = HDL.parse(file);
+    const maybeParsedHDL = HDL.parseStrict(file);
 
     let maybeChip: Result<Chip, Error>;
     if (isOk(maybeParsedHDL)) {

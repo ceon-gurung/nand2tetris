@@ -19,7 +19,9 @@ output;
 async function stepOnce(sep: string) {
   const mem = new Memory();
   const test = unwrap(
-    ChipTest.from(unwrap(TST.parse(tstWith(sep))), { requireLoad: false }),
+    ChipTest.from(unwrap(TST.parseStrict(tstWith(sep))), {
+      requireLoad: false,
+    }),
   ).with(mem);
   test.reset();
   // The keyboard event arrives on a later macrotask, like a real key press.

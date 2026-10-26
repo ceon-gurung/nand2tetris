@@ -244,7 +244,7 @@ export function makeCpuStore(
     compileTest(file: string, cmp?: string, _path?: string) {
       const tstPath = _path ?? path;
       dispatch.current({ action: "setTest", payload: { tst: file, cmp } });
-      const tst = TST.parse(file);
+      const tst = TST.parseStrict(file);
 
       if (isErr(tst)) {
         setStatus({
